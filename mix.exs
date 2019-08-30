@@ -9,7 +9,26 @@ defmodule Liveproxy.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+
+      # static analysis
+      dialyzer: [
+        flags: [
+          :error_handling,
+          :race_conditions,
+          :underspecs,
+          :unmatched_returns
+        ]
+      ],
+
+      # test coverage
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
     ]
   end
 
@@ -32,6 +51,11 @@ defmodule Liveproxy.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # dev
+      {:dialyxir, "~> 1.0.0-rc.6", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.1.0", only: [:dev, :test], runtime: false},
+
+      # prod
       {:phoenix, "~> 1.4.9"},
       {:phoenix_pubsub, "~> 1.1"},
       {:phoenix_html, "~> 2.11"},
@@ -39,7 +63,9 @@ defmodule Liveproxy.MixProject do
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:phoenix_live_view, "~> 0.1.1"}
+      {:phoenix_live_view, "~> 0.1.1"},
+      {:typed_struct, "~> 0.1.4"},
+      {:hackney, "~> 1.15"}
     ]
   end
 end

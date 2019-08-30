@@ -12,7 +12,6 @@ defmodule LiveproxyWeb.Router do
 
   scope "/", LiveproxyWeb do
     pipe_through :browser
-
-    get "/", PageController, :index
+    live "/", ProxyLive
   end
 end

@@ -11,13 +11,13 @@ import css from "../css/app.css"
 //
 import "phoenix_html"
 
-import "mdn-polyfills/NodeList.prototype.forEach"
-import "mdn-polyfills/Element.prototype.closest"
-import "mdn-polyfills/Element.prototype.matches"
-import "child-replace-with-polyfill"
-import "url-search-params-polyfill"
-import "formdata-polyfill"
-import "classlist-polyfill"
+// import "mdn-polyfills/NodeList.prototype.forEach"
+// import "mdn-polyfills/Element.prototype.closest"
+// import "mdn-polyfills/Element.prototype.matches"
+// import "child-replace-with-polyfill"
+// import "url-search-params-polyfill"
+// import "formdata-polyfill"
+// import "classlist-polyfill"
 import LiveSocket from "phoenix_live_view"
 
 let liveSocket = new LiveSocket("/live")
