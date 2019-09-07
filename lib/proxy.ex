@@ -10,26 +10,19 @@ defmodule Proxy do
   end
 end
 
-defmodule ProxyOk do
-  use TypedStruct
-
-  typedstruct do
-    field(:type, Proxy.type())
-  end
-end
-
 defmodule ProxyCheck do
   @spec to_option(Proxy.t()) :: {:proxy, any}
-  defp to_option(%Proxy{type: :http, host: host, port: port}),
-    do: {:proxy, {to_charlist(host), port}}
-
-  defp to_option(%Proxy{type: :socks, host: host, port: port}),
-    do: {:proxy, {:socks5, to_charlist(host), port}}
+  defp to_option(proxy) do
+    case proxy do
+      %Proxy{type: :http, host: host, port: port} -> {:proxy, {host, port}}
+      %Proxy{type: :socks, host: host, port: port} -> {:proxy, {:socks5, to_charlist(host), port}}
+    end
+  end
 
   @spec check(Proxy.t()) :: Proxy.type() | :err
   defp check(%Proxy{type: type} = proxy) do
     case :hackney.request(:head, "https://adel.lol", [], "", [to_option(proxy)]) do
-      {:ok, 200, _headers, _client} -> type
+      {:ok, 200, _headers} -> type
       _ -> :err
     end
   end
