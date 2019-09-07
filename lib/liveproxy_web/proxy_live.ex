@@ -14,18 +14,20 @@ defmodule LiveproxyWeb.ProxyLive do
   use Phoenix.LiveView
   import Phoenix.HTML.Form
 
-  @type assigns :: %{required(:state) => :idle | [any]}
+  @type state :: :idle | ProxyList.t()
+  @type assigns :: %{required(:state) => state}
   @type socket :: %Phoenix.LiveView.Socket{}
 
   def mount(_state, socket) do
     {:ok, assign(socket, :state, :idle)}
   end
 
+  @spec working(state) :: boolean
   defp working(:idle), do: false
   defp working(%ProxyList{working: []}), do: false
   defp working(%ProxyList{working: _}), do: true
 
-  @spec btn_text(any) :: String.t()
+  @spec btn_text(state) :: String.t()
   defp btn_text(state) do
     if working(state), do: "Checking...", else: "Check"
   end

@@ -31,13 +31,15 @@ defmodule ProxyCheck do
   def check_tup({host, port}) do
     parent = self()
 
-    Task.start(fn ->
-      send(parent, check(%Proxy{type: :http, host: host, port: port}))
-    end)
+    {:ok, _} =
+      Task.start(fn ->
+        send(parent, check(%Proxy{type: :http, host: host, port: port}))
+      end)
 
-    Task.start(fn ->
-      send(parent, check(%Proxy{type: :socks, host: host, port: port}))
-    end)
+    {:ok, _} =
+      Task.start(fn ->
+        send(parent, check(%Proxy{type: :socks, host: host, port: port}))
+      end)
 
     receive do
       :err ->
