@@ -56,11 +56,14 @@ defmodule ProxyCheck do
     end
   end
 
+  @spec check_list(String.t()) :: [{String.t(), port}]
   def check_list(list) do
     String.split(list, "\n", trim: true)
     |> Enum.flat_map(fn line ->
-      case String.split(line, ":", trim: true) do
-        [host, port] -> [{host, String.to_integer(port)}]
+      with [host, port_s] <- String.split(line, ":", trim: true),
+           {port, _} <- Integer.parse(port_s) do
+        [{host, port}]
+      else
         _ -> []
       end
     end)
