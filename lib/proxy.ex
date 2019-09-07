@@ -4,9 +4,9 @@ defmodule Proxy do
   @type type :: :http | :socks
 
   typedstruct do
-    field(:type, type)
-    field(:host, String.t())
-    field(:port, port)
+    field(:type, type, required: true)
+    field(:host, String.t(), required: true)
+    field(:port, port, required: true)
   end
 end
 
@@ -20,34 +20,29 @@ end
 
 defmodule ProxyCheck do
   @spec to_option(Proxy.t()) :: {:proxy, any}
-  defp to_option(%Proxy{type: :http, host: host, port: port}), do: {:proxy, {host, port}}
+  defp to_option(%Proxy{type: :http, host: host, port: port}),
+    do: {:proxy, {to_charlist(host), port}}
 
   defp to_option(%Proxy{type: :socks, host: host, port: port}),
-    do: {:proxy, {:socks5, host, port}}
+    do: {:proxy, {:socks5, to_charlist(host), port}}
 
-  @spec check(Proxy.t(), 1..2) :: Proxy.type() | :err
-  defp check(proxy, attempt \\ 1) do
+  @spec check(Proxy.t()) :: Proxy.type() | :err
+  defp check(%Proxy{type: type} = proxy) do
     case :hackney.request(:head, "https://adel.lol", [], "", [to_option(proxy)]) do
-      {:ok, 200, _headers, _client} ->
-        :ok
-
-      _ ->
-        if attempt == 2 do
-          :err
-        else
-          check(proxy, attempt + 1)
-        end
+      {:ok, 200, _headers, _client} -> type
+      _ -> :err
     end
   end
 
+  @spec check_tup({String.t(), port}) :: Proxy.type() | :err
   def check_tup({host, port}) do
     parent = self()
 
-    Task.start_link(fn ->
+    Task.start(fn ->
       send(parent, check(%Proxy{type: :http, host: host, port: port}))
     end)
 
-    Task.start_link(fn ->
+    Task.start(fn ->
       send(parent, check(%Proxy{type: :socks, host: host, port: port}))
     end)
 
@@ -55,10 +50,14 @@ defmodule ProxyCheck do
       :err ->
         receive do
           x -> x
+        after
+          10_000 -> :err
         end
 
       x ->
         x
+    after
+      10_000 -> :err
     end
   end
 
