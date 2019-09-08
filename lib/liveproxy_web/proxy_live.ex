@@ -51,19 +51,16 @@ defmodule LiveproxyWeb.ProxyLive do
   @spec handle_event(<<_::40>>, map, socket) :: {:noreply, socket}
   def handle_event("check", %{"check" => %{"proxies" => list}}, socket) do
     parent = self()
-    pairs = ProxyCheck.check_list(list)
+    proxies = Proxy.check_list(list)
 
-    pairs
-    |> Enum.each(fn pair ->
-      Task.start(fn ->
-        send(parent, {pair, ProxyCheck.check_tup(pair)})
-      end)
-    end)
+    for proxy <- proxies do
+      Task.start(fn -> send(parent, {proxy, Proxy.check(proxy)}) end)
+    end
 
-    {:noreply, socket |> assign(:state, %ProxyList{success: [], failed: [], working: pairs})}
+    {:noreply, socket |> assign(:state, %ProxyList{success: [], failed: [], working: proxies})}
   end
 
-  @spec handle_info({{String.t(), port}, :err}, socket) :: {:noreply, socket}
+  @spec handle_info({Proxy.proxy(), :err}, socket) :: {:noreply, socket}
   def handle_info(
         {pair, :err} = result,
         %Phoenix.LiveView.Socket{
@@ -75,7 +72,7 @@ defmodule LiveproxyWeb.ProxyLive do
      |> assign(:state, %{list | working: List.delete(work, pair), failed: fail ++ [result]})}
   end
 
-  @spec handle_info({{String.t(), port}, Proxy.type()}, socket) :: {:noreply, socket}
+  @spec handle_info(Proxy.req(), socket) :: {:noreply, socket}
   def handle_info(
         {pair, _type} = result,
         %Phoenix.LiveView.Socket{

@@ -65,7 +65,8 @@ defmodule Liveproxy.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:phoenix_live_view, "~> 0.1.1"},
       {:typed_struct, "~> 0.1.4"},
-      {:hackney, "~> 1.15"}
+      {:hackney, "~> 1.15"},
+      {:geolix, "~> 0.18"}
     ]
   end
 end

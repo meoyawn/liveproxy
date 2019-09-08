@@ -57,6 +57,15 @@ config :liveproxy, LiveproxyWeb.Endpoint,
     ]
   ]
 
+config :geolix,
+  databases: [
+    %{
+      id: :country,
+      adapter: Geolix.Adapter.MMDB2,
+      source: "priv/GeoLite2-Country.mmdb"
+    }
+  ]
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 

@@ -1,62 +1,50 @@
 defmodule Proxy do
-  use TypedStruct
-
+  @type proxy :: {String.t(), port}
   @type type :: :http | :socks
+  @type req :: {proxy, type}
+  @type resp :: type | :err
 
-  typedstruct do
-    field(:type, type, required: true)
-    field(:host, String.t(), required: true)
-    field(:port, port, required: true)
-  end
-end
+  @spec to_option(req) :: {:proxy, any}
+  defp to_option({proxy, :http}), do: {:proxy, proxy}
+  defp to_option({{host, port}, :socks}), do: {:proxy, {:socks5, to_charlist(host), port}}
 
-defmodule ProxyCheck do
-  @spec to_option(Proxy.t()) :: {:proxy, any}
-  defp to_option(proxy) do
-    case proxy do
-      %Proxy{type: :http, host: host, port: port} -> {:proxy, {host, port}}
-      %Proxy{type: :socks, host: host, port: port} -> {:proxy, {:socks5, to_charlist(host), port}}
+  @spec check_type(req) :: resp
+  defp check_type({{host, _port}, type} = req) do
+    case :hackney.request(:head, "https://adel.lol", [], "", [to_option(req)]) do
+      {:ok, 200, _headers} ->
+        %{country: %{country: %{name: country}}} = Geolix.lookup(host)
+        {country, type}
+
+      _ ->
+        :err
     end
   end
 
-  @spec check(Proxy.t()) :: Proxy.type() | :err
-  defp check(%Proxy{type: type} = proxy) do
-    case :hackney.request(:head, "https://adel.lol", [], "", [to_option(proxy)]) do
-      {:ok, 200, _headers} -> type
-      _ -> :err
-    end
-  end
+  @timeout 15_000
 
-  @spec check_tup({String.t(), port}) :: Proxy.type() | :err
-  def check_tup({host, port}) do
+  @spec check(proxy) :: resp
+  def check(proxy) do
     parent = self()
 
-    {:ok, _} =
-      Task.start(fn ->
-        send(parent, check(%Proxy{type: :http, host: host, port: port}))
-      end)
-
-    {:ok, _} =
-      Task.start(fn ->
-        send(parent, check(%Proxy{type: :socks, host: host, port: port}))
-      end)
+    {:ok, _} = Task.start(fn -> send(parent, check_type({proxy, :http})) end)
+    {:ok, _} = Task.start(fn -> send(parent, check_type({proxy, :socks})) end)
 
     receive do
       :err ->
         receive do
           x -> x
         after
-          10_000 -> :err
+          @timeout -> :err
         end
 
       x ->
         x
     after
-      10_000 -> :err
+      @timeout -> :err
     end
   end
 
-  @spec check_list(String.t()) :: [{String.t(), port}]
+  @spec check_list(String.t()) :: [proxy]
   def check_list(list) do
     String.split(list, "\n", trim: true)
     |> Enum.flat_map(fn line ->
