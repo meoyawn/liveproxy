@@ -2,7 +2,7 @@ defmodule Proxy do
   @type proxy :: {String.t(), port}
   @type type :: :http | :socks
   @type req :: {proxy, type}
-  @type resp :: type | :err
+  @type resp :: {type, String.t()} | :err
 
   @spec to_option(req) :: {:proxy, any}
   defp to_option({proxy, :http}), do: {:proxy, proxy}
@@ -10,10 +10,12 @@ defmodule Proxy do
 
   @spec check_type(req) :: resp
   defp check_type({{host, _port}, type} = req) do
-    case :hackney.request(:head, "https://adel.lol", [], "", [to_option(req)]) do
-      {:ok, 200, _headers} ->
+    opts = [to_option(req)]
+
+    case :hackney.request(:get, "https://adel.lol", [], "", opts) do
+      {:ok, 200, _headers, _client} ->
         %{country: %{country: %{name: country}}} = Geolix.lookup(host)
-        {country, type}
+        {type, country}
 
       _ ->
         :err
@@ -44,8 +46,8 @@ defmodule Proxy do
     end
   end
 
-  @spec check_list(String.t()) :: [proxy]
-  def check_list(list) do
+  @spec parse_list(String.t()) :: [proxy]
+  def parse_list(list) do
     String.split(list, "\n", trim: true)
     |> Enum.flat_map(fn line ->
       with [host, port_s] <- String.split(line, ":", trim: true),
