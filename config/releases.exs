@@ -1,7 +1,7 @@
 import Config
 
 config :liveproxy, LiveproxyWeb.Endpoint,
-  http: [:inet6, port: String.to_integer(System.get_env("PORT") || "4000"), compress: true],
+  http: [:inet6, port: String.to_integer(System.get_env("PORT") || "4000"), compress: true]
 
 config :geolix,
   databases: [
