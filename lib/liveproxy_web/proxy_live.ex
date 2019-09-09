@@ -58,10 +58,11 @@ defmodule LiveproxyWeb.ProxyLive do
         <h2>Alive</h2>
       <% end %>
       <table>
-        <%= for {{host,port}, {type, country}} <- @state.success do %>
+        <%= for {{host,port}, {type, country, time}} <- @state.success do %>
           <tr>
             <td><%= "#{host}:#{port}" %></td>
             <td><%= type(type) %></td>
+            <td><%= "#{time} ms" %></td>
             <td><%= country %></td>
           </tr>
         <% end %>

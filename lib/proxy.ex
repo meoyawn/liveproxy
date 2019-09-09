@@ -12,10 +12,13 @@ defmodule Proxy do
         :socks -> {:socks5, to_charlist(host), port}
       end
 
+    start = System.monotonic_time(:millisecond)
+
     case :hackney.request(:head, "https://adel.lol", [], "", proxy: proxy, pool: :massive) do
       {:ok, 200, _headers} ->
+        finish = System.monotonic_time(:millisecond)
         %{country: %{registered_country: %{name: country}}} = Geolix.lookup(host)
-        {type, country}
+        {type, country, finish - start}
 
       _ ->
         :err
