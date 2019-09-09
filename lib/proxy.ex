@@ -4,17 +4,17 @@ defmodule Proxy do
   @type req :: {proxy, type}
   @type resp :: {type, String.t()} | :err
 
-  @spec to_option(req) :: {:proxy, any}
-  defp to_option({proxy, :http}), do: {:proxy, proxy}
-  defp to_option({{host, port}, :socks}), do: {:proxy, {:socks5, to_charlist(host), port}}
+  @spec check(proxy, type) :: resp
+  defp check({host, port} = proxy, type) do
+    proxy =
+      case type do
+        :http -> proxy
+        :socks -> {:socks5, to_charlist(host), port}
+      end
 
-  @spec check_type(req) :: resp
-  defp check_type({{host, _port}, type} = req) do
-    opts = [to_option(req)]
-
-    case :hackney.request(:get, "https://adel.lol", [], "", opts) do
-      {:ok, 200, _headers, _client} ->
-        %{country: %{country: %{name: country}}} = Geolix.lookup(host)
+    case :hackney.request(:head, "https://adel.lol", [], "", proxy: proxy, pool: :massive) do
+      {:ok, 200, _headers} ->
+        %{country: %{registered_country: %{name: country}}} = Geolix.lookup(host)
         {type, country}
 
       _ ->
@@ -22,28 +22,34 @@ defmodule Proxy do
     end
   end
 
-  @timeout 15_000
+  def timeout, do: 15_000
 
   @spec check(proxy) :: resp
   def check(proxy) do
     parent = self()
 
-    {:ok, _} = Task.start(fn -> send(parent, check_type({proxy, :http})) end)
-    {:ok, _} = Task.start(fn -> send(parent, check_type({proxy, :socks})) end)
+    {:ok, pid1} = Task.start(fn -> send(parent, check(proxy, :http)) end)
+    {:ok, pid2} = Task.start(fn -> send(parent, check(proxy, :socks)) end)
 
-    receive do
-      :err ->
-        receive do
-          x -> x
-        after
-          @timeout -> :err
-        end
+    ret =
+      receive do
+        :err ->
+          receive do
+            x -> x
+          after
+            timeout() -> :err
+          end
 
-      x ->
-        x
-    after
-      @timeout -> :err
-    end
+        x ->
+          x
+      after
+        timeout() -> :err
+      end
+
+    true = Process.exit(pid1, :kill)
+    true = Process.exit(pid2, :kill)
+
+    ret
   end
 
   @spec parse_list(String.t()) :: [proxy]
