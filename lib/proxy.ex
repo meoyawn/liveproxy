@@ -2,7 +2,7 @@ defmodule Proxy do
   @type proxy :: {String.t(), port}
   @type type :: :http | :socks
   @type req :: {proxy, type}
-  @type resp :: {type, String.t()} | :err
+  @type resp :: {type, String.t(), non_neg_integer} | :err
 
   @spec check(proxy, type) :: resp
   defp check({host, port} = proxy, type) do
