@@ -1,14 +1,8 @@
-FROM elixir:alpine as build
-
-RUN apk add --update nodejs nodejs-npm
+FROM adeln/phoenix:latest as build
 
 # prepare build dir
 RUN mkdir /app
 WORKDIR /app
-
-# install hex + rebar
-RUN mix local.hex --force && \
-    mix local.rebar --force
 
 # set build ENV
 ENV MIX_ENV=prod
@@ -45,5 +39,4 @@ USER nobody
 
 ENV HOME=/app
 
-EXPOSE 4000
 CMD bin/liveproxy start
