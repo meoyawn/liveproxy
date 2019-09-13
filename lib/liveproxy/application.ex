@@ -6,7 +6,7 @@ defmodule Liveproxy.Application do
   use Application
 
   def start(_type, _args) do
-    :ok = :hackney_pool.start_pool(:massive, timeout: Proxy.timeout(), max_connections: 100_000)
+    :ok = :hackney_pool.start_pool(:massive, timeout: Proxy.timeout(), max_connections: 5_000)
 
     # List all child processes to be supervised
     children = [
