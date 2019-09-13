@@ -43,8 +43,7 @@ jobs:
           key: v1-build-cache
           paths: "_build"
 
-      - run: mix test  # run all tests in project
+      - run: mix test
 
-      - store_test_results:  # upload junit test results for display in Test Summary
-          # Read more: https://circleci.com/docs/2.0/collect-test-data/
-          path: _build/test/lib/REPLACE_WITH_YOUR_APP_NAME # Replace with the name of your :app
+      - store_test_results:
+          path: _build/test/lib/liveproxy
