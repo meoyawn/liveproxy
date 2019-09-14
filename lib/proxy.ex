@@ -5,10 +5,10 @@ defmodule Proxy do
   @type resp :: {type, String.t(), non_neg_integer} | :err
 
   @spec check(proxy, type) :: resp
-  defp check({host, port} = proxy, type) do
+  defp check({host, port}, type) do
     proxy =
       case type do
-        :http -> proxy
+        :http -> {host, port}
         :socks -> {:socks5, to_charlist(host), port}
       end
 
